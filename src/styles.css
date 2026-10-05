@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Whole-app background in light mode, matching the same light grey Bootstrap's bg-light
+   utility already uses on the left nav sidebar (see app.component.html), instead of the
+   page defaulting to plain white everywhere else. Scoped to light mode only (prefers-color-
+   scheme: light also matches when the OS has no preference set, which is the common case) so
+   this doesn't touch how the app looks under an OS-level dark preference. */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: var(--bs-light, #f8f9fa);
+  }
+}

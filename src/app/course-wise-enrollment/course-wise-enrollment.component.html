@@ -1,0 +1,583 @@
+<!-- container-fluid (not container): avoids Bootstrap's max-width + auto-centering, which
+     pushed content away from the sidebar and grew worse once the sidebar was hidden. -->
+<div class="container-fluid my-4 course-wise-enrollment">
+  <!-- Bootstrap's check-circle-fill icon sprite (see the Bootstrap docs "Icons" alert
+       example), reused by the success alert below via <use>. -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+    <symbol id="check-circle-fill" viewBox="0 0 16 16">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
+  </svg>
+  <!-- Fixed to the viewport (see .enrollment-success-alert in the stylesheet) so it never
+       shifts page content when it appears/disappears. [class.show] lets
+       scheduleSuccessAutoDismiss() fade it out via Bootstrap's .fade transition instead of
+       vanishing instantly on *ngIf removal. -->
+  <div class="alert alert-success alert-dismissible fade d-inline-block enrollment-success-alert"
+       [class.show]="successAlertVisible"
+       *ngIf="enrollmentMessage && enrollmentMessageType === 'success'" role="alert">
+    <svg class="bi me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
+    <strong>Success!</strong> {{ enrollmentMessage }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item"><a href="#" (click)="$event.preventDefault()">Configure</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Course Enrollment</li>
+    </ol>
+  </nav>
+
+  <!-- The search bar is centered on the row itself (see .course-enrollment-heading-row/
+       .global-search-wrapper in the stylesheet), not just pushed to one side, so it stays in
+       the middle regardless of how wide the heading text is. Stays stacked below the heading
+       (full width) until xl, where the sidebar + heading finally leave enough room for a
+       centered search box beside it without the two overlapping. -->
+  <div class="d-flex flex-column flex-xl-row align-items-xl-center gap-2 mb-4 course-enrollment-heading-row">
+    <h2 class="mb-0">Course Enrollment</h2>
+    <div class="global-search-wrapper">
+      <input type="text" class="form-control global-search-input"
+             placeholder="Search..."
+             [ngModel]="globalSearchText" (ngModelChange)="setGlobalSearchText($event)">
+    </div>
+  </div>
+
+  <!-- Cascading filter dropdowns -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-12 col-sm-6 col-lg mb-3">
+          <label for="academicYear" class="font-weight-bold d-block">Academic Year</label>
+          <div class="dropdown">
+            <button type="button" id="academicYear" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span>{{ selectedYear || 'Select Academic Year' }}</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="academicYear">
+              <li *ngFor="let y of academicYears">
+                <a class="dropdown-item" href="javascript:void(0)" (click)="selectYear(y.year)">{{ y.year }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg mb-3">
+          <label for="degree" class="font-weight-bold d-block">Degree</label>
+          <div class="dropdown">
+            <button type="button" id="degree" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span>{{ selectedDegree || 'Select Degree' }}</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="degree">
+              <li *ngFor="let d of degrees">
+                <a class="dropdown-item" href="javascript:void(0)" (click)="selectDegree(d.name)">{{ d.name }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg mb-3">
+          <label for="department" class="font-weight-bold d-block">Department</label>
+          <div class="dropdown">
+            <button type="button" id="department" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span>{{ selectedDepartment || 'Select Department' }}</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="department">
+              <li *ngFor="let dep of departments">
+                <a class="dropdown-item" href="javascript:void(0)" (click)="selectDepartment(dep.name)">{{ dep.name }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg mb-3">
+          <label for="semester" class="font-weight-bold d-block">Semester</label>
+          <div class="dropdown">
+            <button type="button" id="semester" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span>{{ selectedSemester || 'Select Semester' }}</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="semester">
+              <li *ngFor="let s of semesters">
+                <a class="dropdown-item" href="javascript:void(0)" (click)="selectSemester(s.name)">{{ s.name }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg mb-3">
+          <label for="section" class="font-weight-bold d-block">Section</label>
+          <div class="dropdown">
+            <button type="button" id="section" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span>{{ selectedSection || 'Select Section' }}</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="section">
+              <li *ngFor="let sec of sections">
+                <a class="dropdown-item" href="javascript:void(0)" (click)="selectSection(sec)">{{ sec }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header enrollment-summary-header d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2" *ngIf="courses && courses.length > 0">
+      <div class="fw-bold">Total # of students : {{ totalStudentsForDegreeAndDepartment }}</div>
+
+      <div class="d-flex flex-column flex-sm-row gap-2">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadElectiveModal">
+          <i class="ph ph-upload-simple me-2"></i>Upload for Elective Course
+        </button>
+        <button type="button" class="btn btn-outline-primary" (click)="enrollStudents()">
+          <i class="ph ph-check-square me-2"></i>Enroll
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Success case is the page-level toast above; this only handles errors. -->
+      <div class="alert alert-danger" *ngIf="enrollmentMessage && enrollmentMessageType === 'danger'" role="alert">
+        {{ enrollmentMessage }}
+      </div>
+
+      <ng-container *ngIf="isSelectionComplete">
+
+        <!-- Empty state: covers both "no entry at all for this combination" (courses === null)
+             and "valid combination, but no courses defined" (courses.length === 0). Plain
+             centered text, not an alert box - no background/border/color, per design. -->
+        <div class="text-center text-muted py-5" *ngIf="courses === null || (courses && courses.length === 0)">
+          <h4>Course enrollment configuration is not available for selected semester/section</h4>
+        </div>
+
+        <!-- Outer "Core Course" accordion: a plain Bootstrap collapse (no Angular state), so
+             it can't affect toggleCourse()/isExpanded() below. Starts collapsed. Full-width
+             styling is in component.css, not Bootstrap's mx-n3 utility, because this project's
+             compiled Bootstrap build has negative margins disabled. -->
+        <div class="accordion" id="coreCoursesAccordion"
+             [class.core-courses-accordion--has-elective]="electiveCourses && electiveCourses.length > 0"
+             *ngIf="courses && courses.length > 0">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="coreCoursesHeading">
+              <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
+                      data-bs-target="#coreCoursesCollapse" aria-expanded="false"
+                      aria-controls="coreCoursesCollapse">
+                Core Course
+              </button>
+            </h2>
+            <div class="accordion-collapse collapse" id="coreCoursesCollapse"
+                 aria-labelledby="coreCoursesHeading">
+              <div class="accordion-body">
+                <!-- Courses list -->
+                <table class="table mb-0 course-list-header" *ngIf="courses && courses.length > 0">
+                  <thead class="table-secondary">
+                    <tr>
+                      <th>COURSE</th>
+                      <th class="text-sm-end">
+                        <span class="enrolled-count-header"># OF STUDENTS ENROLLED</span>
+                      </th>
+                    </tr>
+                  </thead>
+                </table>
+                <div class="accordion" id="courseAccordion" *ngIf="courses && courses.length > 0">
+                  <div class="accordion-item" *ngFor="let course of filteredCoreCourses; trackBy: trackByCourseCode">
+            <h2 class="accordion-header" [id]="'heading-' + course.code">
+              <button type="button" class="accordion-button" [class.collapsed]="!isExpanded(course)"
+                      [attr.aria-expanded]="isExpanded(course)" [attr.aria-controls]="'collapse-' + course.code"
+                      (click)="toggleCourse(course)">
+                <!-- align-items-start keeps the enrolled count on the name's first line
+                     instead of floating mid-block when a long name wraps on mobile. -->
+                <span class="d-flex align-items-start flex-grow-1 me-0 me-sm-5">
+                  <!-- Name and code in one span (one continuous text run, one fw-bold
+                       appearance) so the strike-through/muted styling below - applied once,
+                       to this whole span - never breaks or looks inconsistent between them. -->
+                  <span class="flex-grow-1 fw-bold" [class.text-decoration-line-through]="isCourseRejected(course)"
+                        [class.text-muted]="isCourseRejected(course)">{{ course.name }} ({{ course.code }})</span>
+                  <span class="flex-grow-1 d-flex align-items-center justify-content-end gap-4">
+                    <span class="enrolled-count fw-bold" [class.text-decoration-line-through]="isCourseRejected(course)"
+                          [class.text-muted]="isCourseRejected(course)">{{ enrolledCount(course) }}</span>
+                    <!-- Opens the modal programmatically, not via data-bs-toggle: stopPropagation
+                         (needed to keep this click out of toggleCourse()) would also block a
+                         delegated data-bs-toggle listener. [class.invisible] (not *ngIf) keeps
+                         its layout space reserved so the count doesn't shift on other rows. -->
+                    <i class="ph ph-trash" [class.invisible]="!isCourseRejected(course)"
+                       [attr.aria-hidden]="!isCourseRejected(course)"
+                       role="button" aria-label="Delete course"
+                       (click)="openDeleteConfirmation(course); $event.stopPropagation()"></i>
+                  </span>
+                </span>
+              </button>
+            </h2>
+
+            <div class="accordion-collapse collapse" [class.show]="isExpanded(course)"
+                 [id]="'collapse-' + course.code" [attr.aria-labelledby]="'heading-' + course.code">
+              <div class="accordion-body" *ngIf="isExpanded(course)">
+                <div class="alert alert-light border mb-0" *ngIf="course.students.length === 0">
+                  No students are enrolled in this course.
+                </div>
+
+                <ng-container *ngIf="course.students.length > 0 && getPageInfo(course) as pageInfo">
+                  <div class="card">
+                    <div class="card-body p-0 pb-3">
+                      <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 px-3 pt-3 pb-3 student-table-controls">
+                        <div class="d-flex align-items-center gap-2">
+                          <select class="form-select form-select-sm entries-per-page-select" [ngModel]="pageInfo.pageSize"
+                                  (ngModelChange)="setPageSize(course, $event)">
+                            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+                          </select>
+                          <span class="entries-per-page-label">entries per page</span>
+                        </div>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0 student-table">
+                          <thead class="table-light">
+                            <tr>
+                              <th class="col-checkbox">
+                                <input type="checkbox" class="form-check-input" [checked]="areAllStudentsEnrolled(course)"
+                                       (change)="toggleAllStudents(course, $any($event.target).checked)">
+                              </th>
+                              <th class="col-slno">SL#</th>
+                              <th class="col-candidate-id">CANDIDATE ID</th>
+                              <th class="col-usn">USN</th>
+                              <th class="col-department-id">DEPARTMENT ID</th>
+                              <th class="col-student-name">STUDENT NAME</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <!-- isRejected/isBacklog are independent flags, not derived from enrolled.
+                                 text-muted is per-<td>, not on <tr>: Bootstrap sets color directly on
+                                 each cell, which beats a color merely inherited from the row. -->
+                            <tr *ngFor="let student of pageInfo.pagedStudents; let i = index; trackBy: trackByStudentId"
+                                [class.text-decoration-line-through]="student.isRejected && !student.isBacklog">
+                              <td class="col-checkbox" [class.text-muted]="isStudentLight(student)">
+                                <input type="checkbox" class="form-check-input" [checked]="student.enrolled"
+                                       (change)="setEnrolled(student, $any($event.target).checked)">
+                              </td>
+                              <td class="col-slno" [class.text-muted]="isStudentLight(student)">{{ pageInfo.startIndex + i + 1 }}</td>
+                              <td class="col-candidate-id" [class.text-muted]="isStudentLight(student)">{{ student.candidateId }}</td>
+                              <td class="col-usn" [class.text-muted]="isStudentLight(student)">{{ student.usn }}</td>
+                              <td class="col-department-id" [class.text-muted]="isStudentLight(student)">{{ selectedDepartmentShortForm }}</td>
+                              <td class="col-student-name" [class.text-muted]="isStudentLight(student)">{{ student.name }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mt-2 student-table-pagination">
+                    <div class="text-muted small">
+                      Showing {{ pageInfo.showingFrom }} to {{ pageInfo.showingTo }} of {{ pageInfo.totalStudents }} entries
+                    </div>
+                    <nav aria-label="Student pagination" *ngIf="pageInfo.totalPages > 1">
+                      <ul class="pagination pagination-sm mb-0 student-table-page-numbers">
+                        <li class="page-item" [class.disabled]="pageInfo.currentPage === 1">
+                          <a class="page-link" href="javascript:void(0)" aria-label="Previous" (click)="setPage(course, pageInfo.currentPage - 1)">
+                            <i class="ph ph-caret-left" aria-hidden="true"></i>
+                          </a>
+                        </li>
+                        <li class="page-item" *ngFor="let p of pageInfo.pageNumbers" [class.active]="p === pageInfo.currentPage">
+                          <a class="page-link" href="javascript:void(0)" (click)="setPage(course, p)">{{ p }}</a>
+                        </li>
+                        <li class="page-item" [class.disabled]="pageInfo.currentPage === pageInfo.totalPages">
+                          <a class="page-link" href="javascript:void(0)" aria-label="Next" (click)="setPage(course, pageInfo.currentPage + 1)">
+                            <i class="ph ph-caret-right" aria-hidden="true"></i>
+                          </a>
+                        </li>
+                      </ul>
+                    </nav>
+                  </div>
+                </ng-container>
+
+                <div class="mt-3" *ngIf="course.students.length > 0">
+                  <h3 class="h6">Enrollment Summary</h3>
+                  <div>Total # of students : {{ totalStudentsForDegreeAndDepartment }}</div>
+                  <div># of students enrolling for {{ course.name }} : {{ enrolledCount(course) }}</div>
+                  <div># of students deleting from {{ course.name }} : {{ deletingCount(course) }}</div>
+                  <div># of students pending : {{ pendingCount(course) }}</div>
+                </div>
+
+                <div class="d-flex flex-column-reverse flex-sm-row justify-content-sm-end gap-2 mt-3" *ngIf="course.students.length > 0">
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetCourse(course)">
+                    <i class="ph ph-arrows-clockwise me-1"></i>Reset
+                  </button>
+                  <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                          data-bs-target="#enrollConfirmModal" (click)="openSaveConfirmation(course)">
+                    <i class="ph ph-floppy-disk me-1"></i>Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mirrors the Core Course accordion above but with its own ids and state
+             (electiveCourses/isElectiveExpanded/toggleElectiveCourse), so the two never
+             affect each other. Hidden entirely when this combination has no elective data. -->
+        <div class="accordion" id="electiveCoursesAccordion" *ngIf="electiveCourses && electiveCourses.length > 0">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="electiveCoursesHeading">
+              <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
+                      data-bs-target="#electiveCoursesCollapse" aria-expanded="false"
+                      aria-controls="electiveCoursesCollapse">
+                Elective Course
+              </button>
+            </h2>
+            <div class="accordion-collapse collapse" id="electiveCoursesCollapse"
+                 aria-labelledby="electiveCoursesHeading">
+              <div class="accordion-body">
+                <table class="table mb-0 course-list-header" *ngIf="electiveCourses && electiveCourses.length > 0">
+                  <thead class="table-secondary">
+                    <tr>
+                      <th>COURSE</th>
+                      <th class="text-sm-end">
+                        <span class="enrolled-count-header"># OF STUDENTS ENROLLED</span>
+                      </th>
+                    </tr>
+                  </thead>
+                </table>
+                <div class="accordion" id="electiveCourseAccordion" *ngIf="electiveCourses && electiveCourses.length > 0">
+                  <div class="accordion-item" *ngFor="let course of filteredElectiveCourses; trackBy: trackByCourseCode">
+                    <h2 class="accordion-header" [id]="'elective-heading-' + course.code">
+                      <button type="button" class="accordion-button" [class.collapsed]="!isElectiveExpanded(course)"
+                              [attr.aria-expanded]="isElectiveExpanded(course)" [attr.aria-controls]="'elective-collapse-' + course.code"
+                              (click)="toggleElectiveCourse(course)">
+                        <span class="d-flex align-items-start flex-grow-1 me-0 me-sm-5">
+                          <!-- Name and code in one span (one continuous text run, one fw-bold
+                               appearance) so the strike-through/muted styling below - applied
+                               once, to this whole span - never breaks or looks inconsistent
+                               between them. -->
+                          <span class="flex-grow-1 fw-bold" [class.text-decoration-line-through]="isCourseRejected(course)"
+                                [class.text-muted]="isCourseRejected(course)">{{ course.name }} ({{ course.code }})</span>
+                          <span class="flex-grow-1 d-flex align-items-center justify-content-end gap-4">
+                            <span class="enrolled-count fw-bold" [class.text-decoration-line-through]="isCourseRejected(course)"
+                                  [class.text-muted]="isCourseRejected(course)">{{ enrolledCount(course) }}</span>
+                            <i class="ph ph-trash" [class.invisible]="!isCourseRejected(course)"
+                               [attr.aria-hidden]="!isCourseRejected(course)"
+                               role="button" aria-label="Delete course"
+                               (click)="openDeleteConfirmation(course, 'elective'); $event.stopPropagation()"></i>
+                          </span>
+                        </span>
+                      </button>
+                    </h2>
+
+                    <div class="accordion-collapse collapse" [class.show]="isElectiveExpanded(course)"
+                         [id]="'elective-collapse-' + course.code" [attr.aria-labelledby]="'elective-heading-' + course.code">
+                      <div class="accordion-body" *ngIf="isElectiveExpanded(course)">
+                        <div class="alert alert-light border mb-0" *ngIf="course.students.length === 0">
+                          No students are enrolled in this course.
+                        </div>
+
+                        <ng-container *ngIf="course.students.length > 0 && getPageInfo(course, 'elective') as pageInfo">
+                          <div class="card">
+                            <div class="card-body p-0 pb-3">
+                              <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 px-3 pt-3 pb-3 student-table-controls">
+                                <div class="d-flex align-items-center gap-2">
+                                  <select class="form-select form-select-sm entries-per-page-select" [ngModel]="pageInfo.pageSize"
+                                          (ngModelChange)="setPageSize(course, $event, 'elective')">
+                                    <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+                                  </select>
+                                  <span class="entries-per-page-label">entries per page</span>
+                                </div>
+                              </div>
+                              <div class="table-responsive">
+                                <table class="table table-sm mb-0 student-table">
+                                  <thead class="table-light">
+                                    <tr>
+                                      <th class="col-checkbox">
+                                        <input type="checkbox" class="form-check-input" [checked]="areAllStudentsEnrolled(course)"
+                                               (change)="toggleAllStudents(course, $any($event.target).checked)">
+                                      </th>
+                                      <th class="col-slno">SL#</th>
+                                      <th class="col-candidate-id">CANDIDATE ID</th>
+                                      <th class="col-usn">USN</th>
+                                      <th class="col-department-id">DEPARTMENT ID</th>
+                                      <th class="col-student-name">STUDENT NAME</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr *ngFor="let student of pageInfo.pagedStudents; let i = index; trackBy: trackByStudentId"
+                                        [class.text-decoration-line-through]="student.isRejected && !student.isBacklog">
+                                      <td class="col-checkbox" [class.text-muted]="isStudentLight(student)">
+                                        <input type="checkbox" class="form-check-input" [checked]="student.enrolled"
+                                               (change)="setEnrolled(student, $any($event.target).checked)">
+                                      </td>
+                                      <td class="col-slno" [class.text-muted]="isStudentLight(student)">{{ pageInfo.startIndex + i + 1 }}</td>
+                                      <td class="col-candidate-id" [class.text-muted]="isStudentLight(student)">{{ student.candidateId }}</td>
+                                      <td class="col-usn" [class.text-muted]="isStudentLight(student)">{{ student.usn }}</td>
+                                      <td class="col-department-id" [class.text-muted]="isStudentLight(student)">{{ selectedDepartmentShortForm }}</td>
+                                      <td class="col-student-name" [class.text-muted]="isStudentLight(student)">{{ student.name }}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mt-2 student-table-pagination">
+                            <div class="text-muted small">
+                              Showing {{ pageInfo.showingFrom }} to {{ pageInfo.showingTo }} of {{ pageInfo.totalStudents }} entries
+                            </div>
+                            <nav aria-label="Student pagination" *ngIf="pageInfo.totalPages > 1">
+                              <ul class="pagination pagination-sm mb-0 student-table-page-numbers">
+                                <li class="page-item" [class.disabled]="pageInfo.currentPage === 1">
+                                  <a class="page-link" href="javascript:void(0)" aria-label="Previous" (click)="setPage(course, pageInfo.currentPage - 1, 'elective')">
+                                    <i class="ph ph-caret-left" aria-hidden="true"></i>
+                                  </a>
+                                </li>
+                                <li class="page-item" *ngFor="let p of pageInfo.pageNumbers" [class.active]="p === pageInfo.currentPage">
+                                  <a class="page-link" href="javascript:void(0)" (click)="setPage(course, p, 'elective')">{{ p }}</a>
+                                </li>
+                                <li class="page-item" [class.disabled]="pageInfo.currentPage === pageInfo.totalPages">
+                                  <a class="page-link" href="javascript:void(0)" aria-label="Next" (click)="setPage(course, pageInfo.currentPage + 1, 'elective')">
+                                    <i class="ph ph-caret-right" aria-hidden="true"></i>
+                                  </a>
+                                </li>
+                              </ul>
+                            </nav>
+                          </div>
+                        </ng-container>
+
+                        <div class="mt-3" *ngIf="course.students.length > 0">
+                          <h3 class="h6">Enrollment Summary</h3>
+                          <div>Total # of students : {{ totalStudentsForDegreeAndDepartment }}</div>
+                          <div># of students enrolling for {{ course.name }} : {{ enrolledCount(course) }}</div>
+                          <div># of students deleting from {{ course.name }} : {{ deletingCount(course) }}</div>
+                          <div># of students pending : {{ pendingCount(course) }}</div>
+                        </div>
+
+                        <div class="d-flex flex-column-reverse flex-sm-row justify-content-sm-end gap-2 mt-3" *ngIf="course.students.length > 0">
+                          <button type="button" class="btn btn-outline-secondary" (click)="resetCourse(course)">
+                            <i class="ph ph-arrows-clockwise me-1"></i>Reset
+                          </button>
+                          <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                  data-bs-target="#enrollConfirmModal" (click)="openSaveConfirmation(course, 'elective')">
+                            <i class="ph ph-floppy-disk me-1"></i>Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- One shared modal (not one per course), populated from whichever course's Save was clicked. -->
+  <div class="modal fade" id="enrollConfirmModal" tabindex="-1" aria-labelledby="enrollConfirmModalLabel"
+       aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="enrollConfirmModalLabel">Enrollment Confirmation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" *ngIf="courseToSave">
+          <div class="card">
+            <div class="card-body">
+              <div>Total # of students : {{ totalStudentsForDegreeAndDepartment }}</div>
+              <div># of students enrolling for {{ courseToSave.name }} : {{ enrolledCount(courseToSave) }}</div>
+              <div># of students deleting from {{ courseToSave.name }} : {{ deletingCount(courseToSave) }}</div>
+              <div># of students pending : {{ pendingCount(courseToSave) }}</div>
+            </div>
+          </div>
+          <p class="mt-3 mb-0">Are you sure you want to save enrollment?</p>
+        </div>
+        <!-- flex-column-reverse stacks these full-width on mobile (align-items-stretch overrides
+             Bootstrap's align-items: center) and puts Save above Cancel by rendering the last DOM
+             child first, while DOM order (and the sm+ row order) stays Cancel, Save. -->
+        <div class="modal-footer flex-column-reverse flex-sm-row align-items-stretch align-items-sm-center justify-content-sm-end">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" (click)="confirmEnrollment()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Elective Course modal: one shared instance, opened by the header button. -->
+  <div class="modal fade" id="uploadElectiveModal" tabindex="-1" aria-labelledby="uploadElectiveModalLabel"
+       aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadElectiveModalLabel">Course Enrollment Upload</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="cancelUpload()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="font-weight-bold d-block">Elective Course</label>
+            <div class="dropdown">
+              <button type="button" id="electiveCourseDropdown" class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                <span>{{ electiveCourseForUpload ? electiveCourseForUpload.name + ' (' + electiveCourseForUpload.code + ')' : 'Select Course' }}</span>
+              </button>
+              <ul class="dropdown-menu w-100" aria-labelledby="electiveCourseDropdown">
+                <li *ngFor="let electiveCourse of availableElectiveCourses">
+                  <a class="dropdown-item" href="javascript:void(0)" (click)="selectElectiveCourseForUpload(electiveCourse)">
+                    {{ electiveCourse.name }} ({{ electiveCourse.code }})
+                  </a>
+                </li>
+                <li *ngIf="availableElectiveCourses.length === 0">
+                  <span class="dropdown-item disabled">No courses available</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mb-0">
+            <label for="electiveFileInput" class="font-weight-bold d-block">Excel File</label>
+            <input type="file" id="electiveFileInput" class="form-control" [class.is-invalid]="uploadFileError"
+                   accept=".xlsx,.xls" (change)="onUploadFileSelected($event)">
+            <div class="invalid-feedback" *ngIf="uploadFileError">{{ uploadFileError }}</div>
+          </div>
+        </div>
+        <!-- flex-column-reverse/align-items-stretch: same reasoning as the Enrollment
+             Confirmation modal's footer above - reorders to Upload, Download Template, Cancel. -->
+        <div class="modal-footer flex-column-reverse flex-sm-row align-items-stretch align-items-sm-center justify-content-sm-end">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" (click)="cancelUpload()">Cancel</button>
+          <button type="button" class="btn btn-outline-primary" [disabled]="!canDownloadElectiveTemplate"
+                  (click)="downloadElectiveTemplate()">Download Template</button>
+          <button type="button" class="btn btn-primary" [disabled]="!canUploadElectiveFile"
+                  data-bs-dismiss="modal" (click)="uploadElectiveFile()">Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation modal: one shared instance, opened via openDeleteConfirmation(). -->
+  <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel"
+       aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmModalLabel">Delete Confirmation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" *ngIf="courseToDelete">
+          <p class="mb-0">
+            Are you sure you want to delete <strong>{{ courseToDelete.name }}</strong>
+            ({{ courseToDelete.code }})?
+          </p>
+        </div>
+        <!-- flex-column-reverse/align-items-stretch: same reasoning as the Enrollment
+             Confirmation modal's footer above - reorders to Delete, Cancel. -->
+        <div class="modal-footer flex-column-reverse flex-sm-row align-items-stretch align-items-sm-center justify-content-sm-end">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="confirmDeleteCourse()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

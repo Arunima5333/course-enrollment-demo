@@ -1,0 +1,137 @@
+/* Fixed-width left nav column, same at every screen size (no mobile stacking); Bootstrap has
+   no utility for an arbitrary pixel width like this. min-height keeps it (and its border-end)
+   spanning the full viewport height even when the routed page is short. */
+.app-sidebar {
+  width: 240px;
+  min-height: 100vh;
+}
+
+/* Mobile: the sidebar becomes a fixed overlay anchored to the left edge instead of a flex
+   item, so it no longer takes part in the .d-flex layout - the main content next to it then
+   naturally keeps its full width rather than shrinking to make room. z-index puts it above
+   both the main content and the backdrop below. */
+@media (max-width: 575.98px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1050;
+  }
+}
+
+/* Dims/covers the mobile-view content behind the open sidebar; hidden entirely on desktop,
+   where the sidebar pushes the content instead of overlaying it. */
+.mobile-nav-backdrop {
+  display: none;
+}
+
+@media (max-width: 575.98px) {
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+  }
+}
+
+/* Mobile only: hides the list icon while the sidebar is open (its own *ngIf removes
+   .app-sidebar from the DOM when closed, so this selector stops matching and the icon
+   reappears). Desktop keeps the icon visible regardless of sidebar state. */
+@media (max-width: 575.98px) {
+  .app-sidebar ~ .app-main-content .sidebar-toggle-icon {
+    display: none;
+  }
+}
+
+/* White in light mode (it used to use Bootstrap's bg-light utility, the same light grey the
+   whole page's body background now uses - see styles.css - so the sidebar needs its own
+   explicit color to still stand out against that). Scoped to light mode only, matching the
+   same @media (prefers-color-scheme: light) technique used for the body background, so this
+   doesn't affect how the sidebar looks under an OS-level dark preference. */
+@media (prefers-color-scheme: light) {
+  .app-sidebar {
+    background-color: #fff;
+  }
+}
+
+/* Reserved, empty space for a future logo at the top of the sidebar - no logo yet, just the
+   height. Bootstrap has no utility for an arbitrary pixel height like this. */
+.app-sidebar-logo-space {
+  height: 64px;
+}
+
+/* Indents "Course Enrollment" clearly to the right of "Configure" (the accordion-button's own
+   padding-left is 1.25rem/20px) so it reads as visually nested under it, rather than starting
+   at - or, as .nav-link's own smaller default padding previously did, even before - Configure's
+   own left edge.
+   color: matched exactly to Configure's own expanded-state text color (measured computed value
+   rgb(5, 44, 101), i.e. --bs-accordion-active-color - the color .accordion-button:not(.collapsed)
+   uses) rather than Bootstrap's default .nav-link blue, since Course Enrollment is only ever
+   visible while nested under an expanded Configure. Also pinned for .active/:hover/:focus: plain
+   .nav-link would otherwise switch to --bs-nav-link-hover-color (blue) on hover/focus, and this
+   link's own .active class would have no color rule of its own - but Configure/.accordion-button
+   has no hover or focus color change of its own (only z-index/box-shadow), so Course Enrollment
+   stays this same single color in every state to match. */
+.nav-link-nested {
+  padding-left: 2.5rem;
+  color: var(--bs-accordion-active-color);
+}
+
+.nav-link-nested:hover,
+.nav-link-nested:focus {
+  color: var(--bs-accordion-active-color);
+}
+
+/* Course Enrollment turns the same blue as the breadcrumb's hover link color (--bs-link-color)
+   specifically when its route is active, matching Configure's own active-route color below. */
+.nav-link-nested.active {
+  color: var(--bs-link-color);
+}
+
+/* Configure's text turns the same blue as the breadcrumb's hover link color (--bs-link-color)
+   whenever the Course Enrollment route is active (see the routerLinkActive on .accordion-item
+   in the template) - regardless of whether Configure itself is expanded or collapsed, so this
+   intentionally overrides Bootstrap's own .accordion-button:not(.collapsed) color too. */
+.configure-route-active > .accordion-header .accordion-button {
+  color: var(--bs-link-color);
+}
+
+/* Sidebar toggle icon: sized up from the default ~1rem icon font-size and given a pointer
+   cursor so it clearly reads as a clickable control. display: block (an <i> is inline by
+   default, so mb-2 in the template alone wouldn't create any visible space below it) and
+   width: fit-content (so the clickable/hoverable area is just the icon itself, not the full
+   row width).
+   margin-left aligns it horizontally with whatever routed page is currently displayed below
+   it - for the Course-wise Enrollment page specifically, that means matching its own
+   .course-wise-enrollment left padding (see course-wise-enrollment.component.css): the
+   container-fluid's default 0.75rem gutter below the sm breakpoint, and that page's own 2rem
+   override from sm up. Kept as this icon's own margin (not shared padding on
+   .app-main-content) because .app-main-content wraps the routed page's own padding too -
+   adding padding here as well would double it up instead of lining the two up. */
+.sidebar-toggle-icon {
+  display: block;
+  width: fit-content;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: 0.75rem;
+  /* A little breathing room from the very top of the page - it otherwise sits flush against
+     .app-main-content's own top edge, with nothing above it to create any natural spacing. */
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 576px) {
+  .sidebar-toggle-icon {
+    margin-left: 2rem;
+  }
+}
+
+/* Flex items default to min-width: auto, which can stop this column from shrinking below the
+   intrinsic width of whatever the routed page renders (e.g. the enrollment page's wide table)
+   and force the whole layout to overflow horizontally instead of letting that content scroll
+   within its own column. Bootstrap's utilities don't include a min-width reset, so it's set
+   directly here - this project's compiled Bootstrap build also has no .min-w-0 utility to
+   reach for instead (see the same note on negative margins in course-wise-enrollment). */
+.app-main-content {
+  min-width: 0;
+}

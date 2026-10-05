@@ -1,0 +1,317 @@
+/* Extra horizontal breathing room between the nav sidebar and this page's content, on top of
+   the container-fluid's own default 0.75rem gutter padding (--bs-gutter-x halved) - purely a
+   left-edge adjustment, not a general container/card-width change. Only from the sm
+   breakpoint up, matching app.component.css's own flex-sm-row: below that the sidebar stacks
+   above this content instead of beside it, so there's no sidebar-to-content horizontal gap to
+   adjust there. */
+@media (min-width: 576px) {
+  .course-wise-enrollment {
+    padding-left: 2rem;
+  }
+}
+
+/* A little extra breathing room between the content's right edge and the right side of the
+   available page area, on top of the container-fluid's own default 0.75rem gutter padding -
+   independent of the left-edge adjustment above, which stays untouched. Unconditional (not
+   scoped to a breakpoint) since this is about the page's own right edge, not the sidebar. */
+.course-wise-enrollment {
+  padding-right: 2rem;
+}
+
+/* --bs-accordion-border-color is only defined inside Bootstrap's .accordion rule; this
+   table sits outside it, so the fallback resolves to --bs-border-color, which is the
+   same value Bootstrap's own .accordion rule uses for --bs-accordion-border-color.
+   overflow: hidden makes the border-radius actually clip the table-secondary background
+   at the rounded corners, since border-collapse: collapse otherwise ignores it. */
+.course-wise-enrollment .course-list-header {
+  overflow: hidden;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  border: 1px solid var(--bs-accordion-border-color, var(--bs-border-color));
+  /* No bottom border here - the accordion's own top border sits right below this table,
+     so a bottom border too would double up as a visible seam/gap between the two. */
+  border-bottom: 0;
+}
+
+/* Match the accordion's own button padding (--bs-accordion-btn-padding-y: 1rem) so the
+   header row sits at the same height as the accordion items below it. */
+.course-wise-enrollment .course-list-header thead th {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Lets the outer "Core Course"/"Elective Course" accordions span the card's full width and
+   sit flush with the card's top/bottom edges instead of sitting inset inside .card-body's
+   own 1rem padding on every side (--bs-card-spacer-x/-y defaults). Bootstrap ships utilities
+   for exactly this (mx-n3/my-n3), but this project's compiled Bootstrap build has negative
+   margin utilities disabled, so the equivalent is written directly here instead.
+   Core Course always bleeds to the card's left/right/top edges. Its bottom edge only bleeds
+   to the card's bottom edge when it is the last section (no Elective Course follows) - the
+   --has-elective modifier (set from the template based on electiveCourses) turns that off,
+   because otherwise Core's negative bottom margin and Elective's negative top margin below
+   would collapse into one another (adjoining negative margins collapse to a single, more
+   negative value, not stack) and completely erase the border between them, including when
+   both accordions are collapsed and there's no course content to hold the gap open.
+   Elective Course never needs a negative top margin - it never touches the card's own top
+   edge, Core Course is always first - only left/right/bottom, to bleed to the card's own
+   edges on those three sides. With both margins at 0 where the two sections meet, the
+   border below renders as a single flush line in every state, exactly like the 1px divider
+   Bootstrap already uses between stacked accordion items. */
+#coreCoursesAccordion {
+  margin: -1rem;
+}
+
+#coreCoursesAccordion.core-courses-accordion--has-elective {
+  margin-bottom: 0;
+}
+
+#electiveCoursesAccordion {
+  margin: 0 -1rem -1rem -1rem;
+  border-top: 1px solid var(--bs-accordion-border-color, var(--bs-border-color));
+}
+
+/* Small bottom spacing after the last individual course accordion, inside each outer
+   Core Course / Elective Course section, so it doesn't sit flush against that section's
+   own bottom edge. padding (not margin) because a plain margin here would collapse with -
+   and be cancelled by - the outer accordion's own negative margin above. */
+#courseAccordion,
+#electiveCourseAccordion {
+  padding-bottom: 0.5rem;
+}
+
+/* "Core Course"/"Elective Course" bold - Bootstrap's .accordion-button is normal-weight by
+   default. Scoped with direct-child combinators (not a plain descendant selector) so this
+   targets only each outer accordion's own button, not the per-course accordion-buttons
+   nested inside its body. */
+#coreCoursesAccordion > .accordion-item > .accordion-header > .accordion-button,
+#electiveCoursesAccordion > .accordion-item > .accordion-header > .accordion-button {
+  font-weight: bold;
+}
+
+/* Every expandable header inside Core Course/Elective Course - the outer section header and
+   each individual course header nested inside it - turns the same blue as the breadcrumb's
+   hover link color (--bs-link-color) while open (:not(.collapsed)); collapsed keeps Bootstrap's
+   normal accordion header color. Plain descendant selector (not the bold rule's direct-child
+   one above), since this is meant to reach every nested accordion-button too. */
+#coreCoursesAccordion .accordion-button:not(.collapsed),
+#electiveCoursesAccordion .accordion-button:not(.collapsed) {
+  color: var(--bs-link-color);
+}
+
+/* Recolors the chevron arrow to match: same SVG Bootstrap already uses for its "open" chevron
+   (--bs-accordion-btn-active-icon), just with the stroke swapped from Bootstrap's default
+   active color (#052c65) to --bs-link-color's own value (#0d6efd) - a CSS custom property
+   can't be interpolated into a data-URI, so the hex is inlined the same way Bootstrap's own
+   dark-mode icon override does. Only takes effect via Bootstrap's own
+   .accordion-button:not(.collapsed)::after rule, so collapsed headers are unaffected. */
+#coreCoursesAccordion .accordion-button,
+#electiveCoursesAccordion .accordion-button {
+  --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230d6efd' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* This project has no app-level dark mode toggle, so without this the card header would
+   stay white regardless of the user's OS/browser color scheme. White in light mode
+   (matching Bootstrap's default), but a proper dark background with readable text when
+   the OS/browser is set to dark mode. */
+.course-wise-enrollment .card-header {
+  background-color: #fff;
+  /* A bit taller than Bootstrap's default 0.5rem top/bottom padding. */
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Extra top/bottom padding for the "Total # of students" + Upload/Enroll header specifically,
+   on top of the 0.75rem all card-headers already get above - this is the only .card-header
+   left in this component now that each student table's own divider line lives below its
+   entries-per-page/Search row instead (see .student-table-controls below). */
+.course-wise-enrollment .enrollment-summary-header {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* "# OF STUDENTS ENROLLED" header, mobile only: wraps into three lines via natural
+   word-wrap (not forced <br> breaks) and is pinned to the column's right edge so the
+   per-course enrolled count in the accordion below (see .course-wise-enrollment
+   .accordion-button below) lines up under it exactly, instead of drifting based on
+   how wide any given digit happens to be.
+   The 41px padding-right here is measured to match where the accordion row's
+   content actually ends: the accordion-button's own 20px padding-right (Bootstrap's
+   --bs-accordion-btn-padding-x default) plus the chevron's 20px width
+   (--bs-accordion-btn-icon-width - Bootstrap lays the chevron out as a real flex
+   item via .accordion-button::after, not as decorative background, so it takes up
+   actual row width). The accordion-button's me-0 in the template removes its extra
+   reserved margin on mobile so nothing but that chevron sits between the row's
+   content and its right edge. Together these give the header cell and the
+   accordion row the same right-hand content edge, so text-align: right /
+   justify-content: end on each side land on the same pixel regardless of course
+   name length or how many digits the enrolled count has. */
+@media (max-width: 575.98px) {
+  .course-wise-enrollment .course-list-header thead th:last-child {
+    text-align: right;
+    padding-right: 41px;
+  }
+
+  /* 100px (rather than the narrower width the lowercase wording needed) because the
+     all-caps text is wider per character; still lands on exactly three lines. */
+  .course-wise-enrollment .enrolled-count-header {
+    display: inline-block;
+    max-width: 100px;
+    text-align: left;
+  }
+
+  /* Bootstrap's .table > thead sets vertical-align: bottom, which is invisible on
+     desktop/tablet (both header cells are always a single line there) but sinks the
+     single-line "Course Name" label to the bottom of the row on mobile, where its
+     sibling cell wraps to three lines and makes the row much taller. Centering both
+     cells here only affects mobile, where the row height actually varies. */
+  .course-wise-enrollment .course-list-header thead th {
+    vertical-align: middle;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .course-wise-enrollment .card-header {
+    background-color: #212529;
+    color: #fff;
+  }
+}
+
+/* Fixed to the viewport (out of normal document flow) so the alert appearing/disappearing
+   never shifts the page content below it - same top-center position on desktop and mobile.
+   white-space: nowrap keeps it on a single line on narrow mobile widths instead of wrapping. */
+.course-wise-enrollment .enrollment-success-alert {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 1080;
+}
+
+/* Its single-line content is wider than a narrow mobile viewport at the normal 1rem alert
+   font-size, which forces the box to stretch edge-to-edge instead of staying compact. Smaller
+   text here keeps it the same content-sized/centered box as desktop, just narrower. */
+@media (max-width: 575.98px) {
+  .course-wise-enrollment .enrollment-success-alert {
+    font-size: 0.8rem;
+  }
+}
+
+/* Home/Configure read as normal breadcrumb text by default, turning into the same blue
+   Bootstrap link color only on hover - never underlined, in either state. */
+.course-wise-enrollment .breadcrumb-item a {
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+
+.course-wise-enrollment .breadcrumb-item a:hover {
+  color: var(--bs-link-color);
+  text-decoration: none;
+}
+
+/* Slightly tightens the gap to the "Course Enrollment" heading below, down from Bootstrap's
+   default 1rem breadcrumb margin-bottom. */
+.course-wise-enrollment .breadcrumb {
+  --bs-breadcrumb-margin-bottom: 0.5rem;
+}
+
+/* Student table column spacing - plain <table>, no fixed/percentage widths on the content
+   columns, so Candidate ID/USN/Department ID/Student Name keep sharing the table's own full
+   width (Bootstrap's .table is already width: 100%) the normal way a table naturally does.
+   Only the checkbox and SL# columns (which should stay compact, not stretch) get an explicit
+   width; padding-right on each column is what actually creates the visible gaps. */
+.course-wise-enrollment .student-table th.col-checkbox,
+.course-wise-enrollment .student-table td.col-checkbox {
+  width: 40px;
+  padding-right: 2rem;
+}
+
+.course-wise-enrollment .student-table th.col-slno,
+.course-wise-enrollment .student-table td.col-slno {
+  width: 70px;
+  padding-right: 1.5rem;
+}
+
+.course-wise-enrollment .student-table th.col-candidate-id,
+.course-wise-enrollment .student-table td.col-candidate-id,
+.course-wise-enrollment .student-table th.col-usn,
+.course-wise-enrollment .student-table td.col-usn,
+.course-wise-enrollment .student-table th.col-department-id,
+.course-wise-enrollment .student-table td.col-department-id {
+  padding-right: 0.75rem;
+}
+
+/* Keeps "DEPARTMENT ID" on a single line instead of wrapping inside its column. */
+.course-wise-enrollment .student-table th.col-department-id {
+  white-space: nowrap;
+}
+
+/* Entries-per-page selector stays compact (content-width, not full-width) on desktop/tablet -
+   Bootstrap's .form-select is width: 100% by default, which would otherwise stretch it across
+   the controls row's whole left-hand flex item. Below sm the controls row (see the template's
+   flex-column on that wrapper) stacks these full-width instead, matching the rest of this
+   page's existing mobile reflow pattern. */
+@media (min-width: 576px) {
+  .course-wise-enrollment .entries-per-page-select {
+    width: auto;
+  }
+}
+
+/* The global search bar is centered on the heading row itself - not merely pushed to one side
+   by flex spacing - so it stays in the middle regardless of how wide the "Course Enrollment"
+   heading text is. Absolute positioning (relative to the row) is what actually achieves a true
+   center, but only from xl up: below that, this page's sidebar leaves too little row width for
+   a centered 320px search box to avoid overlapping the heading (verified empirically - the
+   two start colliding below ~1200px of viewport width with this page's sidebar). Below xl the
+   search instead just flows as the row's second stacked item, full width, right below the
+   heading - the same mobile-stacks/desktop-row pattern already used elsewhere on this page,
+   just at a wider breakpoint than usual because of how much width the sidebar takes up. */
+@media (min-width: 1200px) {
+  .course-wise-enrollment .course-enrollment-heading-row {
+    position: relative;
+  }
+
+  .course-wise-enrollment .global-search-wrapper {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 380px;
+  }
+}
+
+.course-wise-enrollment .global-search-input {
+  width: 100%;
+}
+
+/* The divider line above each student table now sits directly below the entries-per-page row
+   instead of above it (there's no empty .card-header div here anymore) - the table-responsive/
+   table immediately follows with no gap of its own, so this border ends up touching the table
+   header exactly like the old empty-bar divider used to touch the row below it. */
+.course-wise-enrollment .student-table-controls {
+  border-bottom: 1px solid var(--bs-card-border-color, var(--bs-border-color));
+}
+
+/* Keeps "entries per page" on one line next to the select, even on narrow mobile widths where
+   the controls row is stacked full-width and would otherwise leave just enough space for the
+   text to word-wrap onto a second line. */
+.course-wise-enrollment .entries-per-page-label {
+  white-space: nowrap;
+}
+
+/* Inactive page numbers (and the Previous/Next arrows) read as plain grey/dark text with no
+   visible border or box - only the active page keeps Bootstrap's normal blue highlight
+   (--bs-pagination-active-* are deliberately left at their Bootstrap defaults below, unlike
+   every other token here). Overriding Bootstrap's own --bs-pagination-* custom properties
+   (rather than fighting .page-link's border/background with !important) is the same approach
+   already used for the accordion chevron color above. */
+.course-wise-enrollment .student-table-page-numbers {
+  --bs-pagination-border-width: 0;
+  --bs-pagination-color: var(--bs-secondary-color, #6c757d);
+  --bs-pagination-bg: transparent;
+  --bs-pagination-hover-color: var(--bs-body-color);
+  --bs-pagination-hover-bg: transparent;
+  --bs-pagination-focus-color: var(--bs-body-color);
+  --bs-pagination-focus-bg: transparent;
+  --bs-pagination-focus-box-shadow: none;
+}
+

@@ -1,21 +1,56 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center">
-  <h1>
-    Welcome to {{ title }}!
-  </h1>
-  <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
-</div>
-<h2>Here are some links to help you start: </h2>
-<ul>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">CLI Documentation</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-  </li>
-</ul>
+<div class="d-flex">
+  <!-- Configure is just a Bootstrap collapse toggle; Course Enrollment is the actual
+       routerLink. Sidebar stays beside the page at every screen width, not stacked on mobile. -->
+  <!-- *ngIf so the main content reclaims full width when the sidebar is toggled off, via the
+       shared SidebarToggleService. -->
+  <!-- Mobile only (see app.component.css) - the sidebar becomes a fixed overlay there instead
+       of pushing the content, and this backdrop dims/covers that content behind it; tapping it
+       closes the sidebar, which is otherwise the only way to close it once the list icon (also
+       mobile-only) hides while the sidebar is open. No-op on desktop. -->
+  <div class="mobile-nav-backdrop" *ngIf="sidebarToggle.visible" (click)="sidebarToggle.toggle()" aria-hidden="true"></div>
+  <nav class="app-sidebar border-end flex-shrink-0" aria-label="Main navigation" *ngIf="sidebarToggle.visible">
+    <!-- Reserved space for a future logo - intentionally empty for now. -->
+    <div class="app-sidebar-logo-space border-bottom"></div>
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+      <!-- routerLinkActive here (no routerLink of its own) scans its descendant
+           Course Enrollment link and adds "configure-route-active" to this element whenever
+           that link's route is active - used in app.component.css to color Configure's text
+           the same blue as the nested link, regardless of expand/collapse state. -->
+      <div class="accordion-item" routerLinkActive="configure-route-active">
+        <h2 class="accordion-header" id="configureHeading">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#configureCollapse" aria-expanded="false" aria-controls="configureCollapse">
+            <i class="ph ph-gear me-2"></i>Configure
+          </button>
+        </h2>
+        <!-- Collapsed by default (no "show" class) - Configure only expands, and Course
+             Enrollment only becomes visible, once the user clicks it; it isn't auto-expanded
+             based on the current route. -->
+        <div id="configureCollapse" class="accordion-collapse collapse" aria-labelledby="configureHeading">
+          <div class="accordion-body p-0">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <!-- nav-link-nested's own padding-left (see app.component.css) is deliberately
+                     greater than the accordion-button's, so this starts clearly to the right
+                     of "Configure" instead of at (or before) its left edge. -->
+                <a class="nav-link nav-link-nested" routerLink="/course-enrollment" routerLinkActive="active">
+                  <span aria-hidden="true">&bull;</span> Course Enrollment
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-<router-outlet></router-outlet>
+  <main class="app-main-content flex-grow-1">
+    <!-- Sidebar toggle - lives in this shell, not any routed page, so it's always visible. -->
+    <i class="ph ph-list sidebar-toggle-icon mb-2" role="button" tabindex="0"
+       aria-label="Toggle navigation sidebar" (click)="sidebarToggle.toggle()"></i>
+
+    <!-- Routed page content, unchanged from before - only its container moved from below a
+         top navbar to beside this sidebar. -->
+    <router-outlet></router-outlet>
+  </main>
+</div>
